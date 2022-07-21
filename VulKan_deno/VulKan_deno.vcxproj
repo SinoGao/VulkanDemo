@@ -19,7 +19,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="21_index_buffer.cpp" />
+    <ClCompile Include="..\Helpers\VulkanBase.cpp" />
+    <ClCompile Include="..\Helpers\VulkanDebug.cpp" />
+    <ClCompile Include="..\Helpers\VulkanDevice.cpp" />
+    <ClCompile Include="..\Helpers\VulkanSwapChain.cpp" />
+    <ClCompile Include="..\Helpers\VulkanUtils.cpp" />
+    <ClCompile Include="Helpers_test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Helpers\VulkanBase.h" />
+    <ClInclude Include="..\Helpers\VulkanDebug.h" />
+    <ClInclude Include="..\Helpers\VulkanDevice.h" />
+    <ClInclude Include="..\Helpers\VulkanIncludes.h" />
+    <ClInclude Include="..\Helpers\VulkanSwapChain.h" />
+    <ClInclude Include="..\Helpers\VulkanTypes.h" />
+    <ClInclude Include="..\Helpers\VulkanUtils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -121,7 +135,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\3rd\include;$(VULKAN_SDK)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
