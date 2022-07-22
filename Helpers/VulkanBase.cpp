@@ -2,6 +2,7 @@
 #include "VulkanDebug.h"
 #include "VulkanTypes.h"
 #include "VulkanUtils.h"
+#include "vulkanConst.h"
 
 namespace SeaTone {
 	VulkanBase::VulkanBase(bool enableValidation) : m_window(nullptr),
@@ -97,6 +98,8 @@ namespace SeaTone {
 
 		createCommandPool();
 		createCommandBuffer();
+
+		createPipleLine();
 		createSyncObjects();
 		return true;
 	}
@@ -106,11 +109,48 @@ namespace SeaTone {
 		glfwInit();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 		m_window = glfwCreateWindow(WIDTH, HEIGHT, "Seatone Vulkan", nullptr, nullptr);
+
+		glfwSetWindowUserPointer(m_window, this);
+		glfwSetWindowSizeCallback(m_window, VulkanBase::onWindowResized);
 		assert(m_window != NULL);
 		return (m_window != NULL);
+	}
+
+	void VulkanBase::onWindowResized(GLFWwindow* window, int width, int height) {
+		if (width == 0 || height == 0) return;
+
+		VulkanBase* app = reinterpret_cast<VulkanBase*>(glfwGetWindowUserPointer(window));
+		//app->recreateSwapChain();
+	}
+
+	void VulkanBase::recreateSwapChain()
+	{
+		int width = 0, height = 0;
+		glfwGetFramebufferSize(m_window, &width, &height);
+		while (width == 0 || height == 0) {
+			glfwGetFramebufferSize(m_window, &width, &height);
+			glfwWaitEvents();
+		}
+
+		vkDeviceWaitIdle(m_device);
+
+		cleanupSwapChain();
+
+		createSwapChain();
+		createImageViews();
+		createFramebuffers();
+	}
+
+	void VulkanBase::cleanupSwapChain()
+	{
+		if (m_vulkanSwapChain)
+		{
+			m_vulkanSwapChain->destroySwapChain();
+			m_vulkanSwapChain = nullptr;
+		}
 	}
 
 	bool VulkanBase::createInstance()
@@ -189,9 +229,21 @@ namespace SeaTone {
 
 	void VulkanBase::createGraphicsPipeline()
 	{
-		auto [pipelineLayout, graphicsPipeline] = utils::createGraphicsPipeline(m_device, m_renderPass, "shaders/15_vert.spv", "shaders/15_frag.spv");
+		// »ù±¾»æÍ¼
+		//auto [pipelineLayout, graphicsPipeline] = utils::createGraphicsPipeline(m_device, m_renderPass, "shaders/15_vert.spv", "shaders/15_frag.spv");
+		
+		auto [pipelineLayout, graphicsPipeline] = utils::createGraphicsPipeline(m_device, m_renderPass, "shaders/18_vert.spv", "shaders/18_frag.spv");
+
 		m_pipelineLayout = pipelineLayout;
 		m_graphicsPipeline = graphicsPipeline;
+	}
+
+	void VulkanBase::createPipleLine()
+	{
+		m_piplLine = new VulkanPipeLine(std::make_tuple(m_physicalDevice, m_device, m_commandPool, m_graphicsQueue));
+		m_piplLine->createVertexBuffer(vertices);
+		m_piplLine->createIndexBuffer(indices);
+
 	}
 
 	void VulkanBase::createSyncObjects()
@@ -216,7 +268,14 @@ namespace SeaTone {
 		vkResetFences(m_device, 1, &m_inFlightFence);
 
 		uint32_t imageIndex;
-		vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			recreateSwapChain();
+			return;
+		}
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+			throw std::runtime_error("failed to acquire swap chain image!");
+		}
 
 		vkResetCommandBuffer(m_commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
 		recordCommandBuffer(m_commandBuffer, imageIndex);
@@ -253,7 +312,13 @@ namespace SeaTone {
 
 		presentInfo.pImageIndices = &imageIndex;
 
-		vkQueuePresentKHR(m_presentQueue, &presentInfo);
+		result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+			recreateSwapChain();
+		}
+		else if (result != VK_SUCCESS) {
+			throw std::runtime_error("failed to present swap chain image!");
+		}
 	}
 	void VulkanBase::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 	{
@@ -293,7 +358,14 @@ namespace SeaTone {
 		scissor.extent = m_swapChainExtent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+		//vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+		VkBuffer vertexBuffers[] = { m_piplLine->vertexBuffer };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+		vkCmdBindIndexBuffer(commandBuffer, m_piplLine->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffer);
 

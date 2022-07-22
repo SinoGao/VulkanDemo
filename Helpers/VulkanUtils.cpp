@@ -1,6 +1,7 @@
 #include "VulkanUtils.h"
 #include "VulkanTypes.h"
 #include "VulkanDebug.h"
+#include "vulkanConst.h"
 
 namespace SeaTone {
     namespace utils {
@@ -176,10 +177,23 @@ namespace SeaTone {
 
             VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
+            //VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+            //vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+            //vertexInputInfo.vertexBindingDescriptionCount = 0;
+            //vertexInputInfo.vertexAttributeDescriptionCount = 0;
+
+            // 开始绑定顶点
             VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
             vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-            vertexInputInfo.vertexBindingDescriptionCount = 0;
-            vertexInputInfo.vertexAttributeDescriptionCount = 0;
+
+            auto bindingDescription = VulkanVertex::getBindingDescription();
+            auto attributeDescriptions = VulkanVertex::getAttributeDescriptions();
+
+            vertexInputInfo.vertexBindingDescriptionCount = 1;
+            vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+            vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+            vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+            //结束帮绑定顶点
 
             VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
             inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

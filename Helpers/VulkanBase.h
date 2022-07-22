@@ -2,7 +2,7 @@
 #include "VulkanIncludes.h"
 #include "VulkanDevice.h"
 #include "VulkanSwapChain.h"
-
+#include "VulkanPipeLine.h"
 namespace SeaTone {
 	const uint32_t WIDTH = 1280;
 	const uint32_t HEIGHT = 720;
@@ -56,11 +56,19 @@ namespace SeaTone {
 
 		void createGraphicsPipeline();
 
+		void createPipleLine();
+
 		void createSyncObjects();
 
 		void drawFrame();
 
 		void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+		static void onWindowResized(GLFWwindow* window, int width, int height);
+		
+		void recreateSwapChain();
+
+		void cleanupSwapChain();
 	private:
 		bool							m_enableValidationLayers	=	false;
 		GLFWwindow*						m_window					=	nullptr;
@@ -96,5 +104,7 @@ namespace SeaTone {
 		VkSemaphore						m_imageAvailableSemaphore;
 		VkSemaphore						m_renderFinishedSemaphore;
 		VkFence							m_inFlightFence;
+
+		VulkanPipeLine*					m_piplLine;
 	};
 }
